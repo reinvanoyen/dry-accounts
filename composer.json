@@ -1,0 +1,15 @@
+{
+  "name": "reinvanoyen/dry-accounts",
+  "description": "Account system for DRY applications",
+  "type": "library",
+  "minimum-stability": "dev",
+  "require": {
+    "reinvanoyen/oak": "dev-master",
+    "dietervyncke/dry-dbi": "dev-master"
+  },
+  "autoload": {
+    "psr-4": {
+      "Tnt\\Account\\": "src/"
+    }
+  }
+}
