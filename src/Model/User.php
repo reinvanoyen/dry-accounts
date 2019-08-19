@@ -32,8 +32,10 @@ class User extends Model
 			$this->salt = \dry\util\string\random(10);
 			$this->password = md5($this->password.$this->salt);
 			$this->token = \dry\util\string\random(10);
+			parent::save();
 
 			Dispatcher::dispatch(Created::class, new Created($this));
+			return;
 		}
 
 		parent::save();
