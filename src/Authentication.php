@@ -95,6 +95,9 @@ class Authentication
 		return $this->user;
 	}
 
+	/**
+	 * Restores the session
+	 */
 	private function restore()
 	{
 		if (Session::has('user')) {
