@@ -33,7 +33,7 @@ class Authentication
 	 * @param string $password
 	 * @return bool
 	 */
-	public function authenticate(string $email, string $password)
+	public function authenticate(string $email, string $password): bool
 	{
 		if (! $this->user) {
 
