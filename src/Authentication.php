@@ -5,6 +5,7 @@ namespace Tnt\Account;
 use dry\db\FetchException;
 use Oak\Dispatcher\Facade\Dispatcher;
 use Oak\Session\Facade\Session;
+use Tnt\Account\Contracts\AuthenticationInterface;
 use Tnt\Account\Events\Authenticated;
 use Tnt\Account\Events\Logout;
 use Tnt\Account\Model\User;
@@ -13,7 +14,7 @@ use Tnt\Account\Model\User;
  * Class Authentication
  * @package Tnt\Account
  */
-class Authentication
+class Authentication implements AuthenticationInterface
 {
 	/**
 	 * @var User $user
