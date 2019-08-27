@@ -42,7 +42,7 @@ class Authentication implements AuthenticationInterface
 
 				$this->user = User::one('
 					WHERE email = ?
-					AND MD5( CONCAT( ?, salt ) ) = password
+					AND MD5( CONCAT( ?, password_salt ) ) = password
 					AND is_activated IS TRUE
 				', $email, $password);
 

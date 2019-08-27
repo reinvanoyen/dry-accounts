@@ -3,12 +3,12 @@
 namespace Tnt\Account\Facade;
 
 use Oak\Facade;
-use Tnt\Account\Authentication;
+use Tnt\Account\Contracts\AuthenticationInterface;
 
 class Auth extends Facade
 {
 	protected static function getContract(): string
 	{
-		return Authentication::class;
+		return AuthenticationInterface::class;
 	}
 }
