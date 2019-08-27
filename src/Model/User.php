@@ -19,7 +19,7 @@ class User extends Model
 	public function activate()
 	{
 		$this->is_activated = true;
-		$this->token = null;
+		$this->temp_token = null;
 		$this->save();
 
 		Dispatcher::dispatch(Activated::class, new Activated($this));
@@ -29,15 +29,18 @@ class User extends Model
 	{
 		if (! $this->id) {
 
-			$this->salt = \dry\util\string\random(10);
-			$this->password = md5($this->password.$this->salt);
-			$this->token = \dry\util\string\random(10);
+			$this->created = time();
+			$this->updated = time();
+			$this->password_salt = \dry\util\string\random(10);
+			$this->password = md5($this->password.$this->password_salt);
+			$this->temp_token = \dry\util\string\random(10);
 			parent::save();
 
 			Dispatcher::dispatch(Created::class, new Created($this));
 			return;
 		}
 
+		$this->updated = time();
 		parent::save();
 	}
 }
