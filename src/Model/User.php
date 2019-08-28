@@ -5,11 +5,14 @@ namespace Tnt\Account\Model;
 use dry\orm\Model;
 use dry\orm\special\Boolean;
 use Oak\Dispatcher\Facade\Dispatcher;
+use Tnt\Account\Authenticatable;
 use Tnt\Account\Events\Activated;
 use Tnt\Account\Events\Created;
 
 class User extends Model
 {
+	use Authenticatable;
+
 	const TABLE = 'user';
 
 	public static $special_fields = [

@@ -2,10 +2,9 @@
 
 namespace Tnt\Account;
 
-use dry\db\FetchException;
 use Oak\Dispatcher\Facade\Dispatcher;
-use Oak\Session\Facade\Session;
 use Tnt\Account\Contracts\AuthenticationInterface;
+use Tnt\Account\Contracts\UserStorageInterface;
 use Tnt\Account\Events\Authenticated;
 use Tnt\Account\Events\Logout;
 use Tnt\Account\Model\User;
@@ -17,16 +16,17 @@ use Tnt\Account\Model\User;
 class Authentication implements AuthenticationInterface
 {
 	/**
-	 * @var User $user
+	 * @var UserStorageInterface $userStorage
 	 */
-	private $user;
+	private $userStorage;
 
 	/**
 	 * Authentication constructor.
+	 * @param UserStorageInterface $userStorage
 	 */
-	public function __construct()
+	public function __construct(UserStorageInterface $userStorage)
 	{
-		$this->restore();
+		$this->userStorage = $userStorage;
 	}
 
 	/**
@@ -36,21 +36,21 @@ class Authentication implements AuthenticationInterface
 	 */
 	public function authenticate(string $email, string $password): bool
 	{
-		if (! $this->user) {
+		if (! $this->userStorage->isValid()) {
 
 			try {
 
-				$this->user = User::one('
+				$user = User::one('
 					WHERE email = ?
 					AND MD5( CONCAT( ?, password_salt ) ) = password
 					AND is_activated IS TRUE
 				', $email, $password);
 
-				Session::set('user', $this->user->id);
-				Session::save();
-
 				// Dispatch the Authenticated event
-				Dispatcher::dispatch(Authenticated::class, new Authenticated($this->user));
+				Dispatcher::dispatch(Authenticated::class, new Authenticated($user));
+
+				// Store the user
+				$this->userStorage->store($user);
 
 				return true;
 
@@ -68,12 +68,8 @@ class Authentication implements AuthenticationInterface
 	{
 		if ($this->isAuthenticated()) {
 
-			$user = $this->user;
-
-			Session::set('user', null);
-			Session::save();
-
-			$this->user = null;
+			$user = $this->userStorage->retrieve();
+			$this->userStorage->clear();
 
 			// Dispatch the Logout event
 			Dispatcher::dispatch(Logout::class, new Logout($user));
@@ -85,7 +81,7 @@ class Authentication implements AuthenticationInterface
 	 */
 	public function isAuthenticated(): bool
 	{
-		return (bool) $this->user;
+		return (bool) $this->userStorage->isValid();
 	}
 
 	/**
@@ -93,18 +89,6 @@ class Authentication implements AuthenticationInterface
 	 */
 	public function getUser(): ?User
 	{
-		return $this->user;
-	}
-
-	/**
-	 * Restores the session
-	 */
-	private function restore()
-	{
-		if (Session::has('user')) {
-			try {
-				$this->user = User::load(Session::get('user'));
-			} catch (FetchException $e) {}
-		}
+		return $this->userStorage->retrieve();
 	}
 }
