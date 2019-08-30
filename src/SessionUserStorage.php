@@ -2,38 +2,52 @@
 
 namespace Tnt\Account;
 
-use dry\db\FetchException;
 use Oak\Session\Facade\Session;
+use Tnt\Account\Contracts\AuthenticatableInterface;
+use Tnt\Account\Contracts\UserRepositoryInterface;
 use Tnt\Account\Contracts\UserStorageInterface;
-use Tnt\Account\Model\User;
 
 class SessionUserStorage implements UserStorageInterface
 {
 	/**
-	 * @param User $user
+	 * @var UserRepositoryInterface
+	 */
+	private $userRepository;
+
+	/**
+	 * SessionUserStorage constructor.
+	 * @param UserRepositoryInterface $userRepository,
+	 */
+	public function __construct(UserRepositoryInterface $userRepository)
+	{
+		$this->userRepository = $userRepository;
+	}
+
+	/**
+	 * @param AuthenticatableInterface $user
 	 * @return mixed|void
 	 */
-	public function store(User $user)
+	public function store(AuthenticatableInterface $user)
 	{
-		Session::set('user', $user->id);
+		Session::set('user', $user->getIdentifier());
 		Session::save();
 	}
 
 	/**
-	 * @return null|User
+	 * @return null|AuthenticatableInterface
 	 */
-	public function retrieve(): ?User
+	public function retrieve(): ?AuthenticatableInterface
 	{
 		if ($this->isValid()) {
 
-			try {
-				return User::load(Session::get('user'));
-			} catch (FetchException $e) {
-				//
-			}
+			$user = $this->userRepository->withIdentifier(Session::get('user'));
 
-			return null;
+			if ($user) {
+				return $user;
+			}
 		}
+
+		return null;
 	}
 
 	/**
@@ -45,14 +59,13 @@ class SessionUserStorage implements UserStorageInterface
 			return false;
 		}
 
-		try {
-			User::load(Session::get('user'));
-			return true;
-		} catch (FetchException $e) {
-			//
+		$user = $this->userRepository->withIdentifier(Session::get('user'));
+
+		if (!$user) {
+			return false;
 		}
 
-		return false;
+		return true;
 	}
 
 	/**

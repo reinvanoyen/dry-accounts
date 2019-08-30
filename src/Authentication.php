@@ -3,11 +3,12 @@
 namespace Tnt\Account;
 
 use Oak\Dispatcher\Facade\Dispatcher;
+use Tnt\Account\Contracts\AuthenticatableInterface;
 use Tnt\Account\Contracts\AuthenticationInterface;
+use Tnt\Account\Contracts\UserRepositoryInterface;
 use Tnt\Account\Contracts\UserStorageInterface;
 use Tnt\Account\Events\Authenticated;
 use Tnt\Account\Events\Logout;
-use Tnt\Account\Model\User;
 
 /**
  * Class Authentication
@@ -21,30 +22,33 @@ class Authentication implements AuthenticationInterface
 	private $userStorage;
 
 	/**
+	 * @var UserRepositoryInterface
+	 */
+	private $userRepository;
+
+	/**
 	 * Authentication constructor.
 	 * @param UserStorageInterface $userStorage
+	 * @param UserRepositoryInterface $userRepository
 	 */
-	public function __construct(UserStorageInterface $userStorage)
+	public function __construct(UserStorageInterface $userStorage, UserRepositoryInterface $userRepository)
 	{
 		$this->userStorage = $userStorage;
+		$this->userRepository = $userRepository;
 	}
 
 	/**
-	 * @param string $email
+	 * @param string $authIdentifier
 	 * @param string $password
 	 * @return bool
 	 */
-	public function authenticate(string $email, string $password): bool
+	public function authenticate(string $authIdentifier, string $password): bool
 	{
 		if (! $this->userStorage->isValid()) {
 
-			try {
+			$user = $this->userRepository->withCredentials($authIdentifier, $password);
 
-				$user = User::one('
-					WHERE email = ?
-					AND MD5( CONCAT( ?, password_salt ) ) = password
-					AND is_activated IS TRUE
-				', $email, $password);
+			if ($user) {
 
 				// Dispatch the Authenticated event
 				Dispatcher::dispatch(Authenticated::class, new Authenticated($user));
@@ -53,8 +57,6 @@ class Authentication implements AuthenticationInterface
 				$this->userStorage->store($user);
 
 				return true;
-
-			} catch (\Exception $e) {
 			}
 		}
 
@@ -85,9 +87,9 @@ class Authentication implements AuthenticationInterface
 	}
 
 	/**
-	 * @return null|User
+	 * @return null|AuthenticatableInterface
 	 */
-	public function getUser(): ?User
+	public function getUser(): ?AuthenticatableInterface
 	{
 		return $this->userStorage->retrieve();
 	}

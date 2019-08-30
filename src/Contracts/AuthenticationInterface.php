@@ -2,8 +2,6 @@
 
 namespace Tnt\Account\Contracts;
 
-use Tnt\Account\Model\User;
-
 Interface AuthenticationInterface
 {
 	/**
@@ -24,7 +22,7 @@ Interface AuthenticationInterface
 	public function isAuthenticated(): bool;
 
 	/**
-	 * @return null|User
+	 * @return null|AuthenticatableInterface
 	 */
-	public function getUser(): ?User;
+	public function getUser(): ?AuthenticatableInterface;
 }
