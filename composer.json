@@ -5,7 +5,9 @@
   "minimum-stability": "dev",
   "require": {
     "reinvanoyen/oak": "dev-master",
-    "dietervyncke/dry-dbi": "dev-master"
+    "dietervyncke/dry-dbi": "dev-master",
+    "dietervyncke/dry-external-api": "dev-master",
+    "lindelius/php-jwt": "dev-master"
   },
   "autoload": {
     "psr-4": {
