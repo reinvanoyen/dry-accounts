@@ -2,11 +2,10 @@
   "name": "reinvanoyen/dry-accounts",
   "description": "Account system for DRY applications",
   "type": "library",
-  "minimum-stability": "dev",
   "require": {
     "reinvanoyen/oak": "^1.0.0",
-    "dietervyncke/dry-dbi": "dev-master",
-    "dietervyncke/dry-external-api": "dev-master",
+    "dietervyncke/dry-dbi": "^1.0.0",
+    "dietervyncke/dry-external-api": "^1.0.0",
     "lindelius/php-jwt": "dev-master"
   },
   "autoload": {
