@@ -2,85 +2,100 @@
 
 namespace Tnt\Account\Controller;
 
+use Oak\Contracts\Config\RepositoryInterface;
 use Tnt\Account\Contracts\UserRepositoryInterface;
 use Tnt\ExternalApi\Exception\ApiException;
 use Tnt\ExternalApi\Http\Request;
 use Tnt\Account\Facade\Auth as Authentication;
 
-const AUTH_SECRET = '813D1494ACC6FFFC1F117C8A899242B89DD4FE7F4EE153BE2CE211F54F00EFED';
-
 class AuthController
 {
-	/**
-	 * @var UserRepositoryInterface
-	 */
-	private $userRepository;
+    /**
+     * @var UserRepositoryInterface
+     */
+    private $userRepository;
 
-	/**
-	 * AuthController constructor.
-	 * @param UserRepositoryInterface $userRepository
-	 */
-	public function __construct(UserRepositoryInterface $userRepository)
-	{
-		$this->userRepository = $userRepository;
-	}
+    /**
+     * @var RepositoryInterface
+     */
+    private $config;
 
-	/**
-	 * @param Request $request
-	 * @return string
-	 * @throws ApiException
-	 */
-	public function authenticate(Request $request)
-	{
-		if (! $request->getHeader('USER') || ! $request->getHeader('PASSWORD')) {
-			throw new ApiException('auth_failed');
-		}
+    /**,
+     * @var string secret
+     */
+    private $secret;
 
-		if (! Authentication::authenticate($request->getHeader('USER'), $request->getHeader('PASSWORD'))) {
-			throw new ApiException('auth_failed');
-		}
+    /**
+     * AuthController constructor.
+     * @param UserRepositoryInterface $userRepository
+     * @param RepositoryInterface $config
+     */
+    public function __construct(UserRepositoryInterface $userRepository, RepositoryInterface $config)
+    {
+        $this->userRepository = $userRepository;
+        $this->config = $config;
 
-		$user = Authentication::getUser();
+        $this->secret = $config->get('accounts.jwt_secret', '');
+    }
 
-		try {
+    /**
+     * @param Request $request
+     * @return string
+     * @throws ApiException
+     */
+    public function authenticate(Request $request)
+    {
+        if (! $request->getHeader('USER') || ! $request->getHeader('PASSWORD')) {
+            throw new ApiException('auth_failed');
+        }
 
-			$jwt = new \Lindelius\JWT\StandardJWT();
-			$jwt->exp = time() + (60 * 60); // Expire after one hour
-			$jwt->iat = time();
-			$jwt->sub = $user->getIdentifier();
+        if (! Authentication::authenticate($request->getHeader('USER'), $request->getHeader('PASSWORD'))) {
+            throw new ApiException('auth_failed');
+        }
 
-			return $jwt->encode(AUTH_SECRET);
+        $user = Authentication::getUser();
 
-		}
-		catch (\Lindelius\JWT\Exception\Exception $e) {
-			throw new ApiException('invalid_jwt', $e->getMessage());
-		}
-	}
+        try {
 
-	/**
-	 * @param Request $request
-	 * @throws ApiException
-	 */
-	public function authorize(Request $request)
-	{
-		if (! $request->getHeader('AUTHORIZATION')) {
-			throw new ApiException('authorize_failed');
-		}
+            $jwt = new \Lindelius\JWT\StandardJWT();
+            $jwt->exp = $this->config->get('accounts.token_expiry_time', time() + (60 * 60));
+            $jwt->iat = time();
+            $jwt->sub = $user->getIdentifier();
 
-		try {
+            return $jwt->encode($this->secret);
 
-			$decodedJwt = \Lindelius\JWT\StandardJWT::decode($request->getHeader('AUTHORIZATION'));
-			$decodedJwt->verify(AUTH_SECRET);
+        }
+        catch (\Lindelius\JWT\Exception\Exception $e) {
+            throw new ApiException('invalid_jwt', $e->getMessage());
+        }
+    }
 
-			$user = $this->userRepository->withIdentifier($decodedJwt->getClaim('sub'));
+    /**
+     * @param Request $request
+     * @return null|\Tnt\Account\Contracts\AuthenticatableInterface
+     * @throws ApiException
+     */
+    public function authorize(Request $request)
+    {
+        if (! $request->getHeader('AUTHORIZATION')) {
+            throw new ApiException('authorize_failed');
+        }
 
-			if (! $user) {
-				throw new ApiException('invalid_user');
-			}
+        try {
 
-		}
-		catch (\Lindelius\JWT\Exception\Exception $e) {
-			throw new ApiException('invalid_jwt', $e->getMessage());
-		}
-	}
+            $decodedJwt = \Lindelius\JWT\StandardJWT::decode($request->getHeader('AUTHORIZATION'));
+            $decodedJwt->verify($this->secret);
+
+            $user = $this->userRepository->withIdentifier($decodedJwt->getClaim('sub'));
+
+            if (! $user) {
+                throw new ApiException('invalid_user');
+            }
+
+            return $user;
+        }
+        catch (\Lindelius\JWT\Exception\Exception $e) {
+            throw new ApiException('invalid_jwt', $e->getMessage());
+        }
+    }
 }
