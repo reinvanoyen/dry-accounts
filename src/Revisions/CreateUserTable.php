@@ -28,7 +28,7 @@ class CreateUserTable implements RevisionInterface
      */
     public function up()
     {
-        $this->queryBuilder->table('user')->create(function (TableBuilder $table) {
+        $this->queryBuilder->table('account_user')->create(function (TableBuilder $table) {
 
             $table->addColumn('id', 'int')->length(11)->primaryKey();
             $table->addColumn('created', 'int')->length(11);
@@ -53,7 +53,7 @@ class CreateUserTable implements RevisionInterface
      */
     public function down()
     {
-        $this->queryBuilder->table('user')->drop();
+        $this->queryBuilder->table('account_user')->drop();
 
         $this->queryBuilder->build();
 
@@ -65,7 +65,7 @@ class CreateUserTable implements RevisionInterface
      */
     public function describeUp(): string
     {
-        return 'Create user table';
+        return 'Create account_user table';
     }
 
     /**
@@ -73,6 +73,6 @@ class CreateUserTable implements RevisionInterface
      */
     public function describeDown(): string
     {
-        return 'Drop user table';
+        return 'Drop account_user table';
     }
 }

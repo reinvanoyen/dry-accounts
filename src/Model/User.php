@@ -15,7 +15,7 @@ class User extends Model implements AuthenticatableInterface, RegisterableInterf
     protected static $authIdentifierName = 'email';
     protected static $tokenName = 'temp_token';
 
-    const TABLE = 'user';
+    const TABLE = 'account_user';
 
     public static $special_fields = [
         'is_activated' => Boolean::class,
