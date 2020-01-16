@@ -11,25 +11,25 @@ use Tnt\Account\Contracts\AuthenticatableInterface;
  */
 abstract class UserEvent extends Event
 {
-	/**
-	 * @var AuthenticatableInterface $user
-	 */
-	private $user;
+    /**
+     * @var AuthenticatableInterface $user
+     */
+    private $user;
 
-	/**
-	 * Activated constructor.
-	 * @param AuthenticatableInterface $user
-	 */
-	public function __construct(AuthenticatableInterface $user)
-	{
-		$this->user = $user;
-	}
+    /**
+     * Activated constructor.
+     * @param AuthenticatableInterface $user
+     */
+    public function __construct(AuthenticatableInterface $user)
+    {
+        $this->user = $user;
+    }
 
-	/**
-	 * @return AuthenticatableInterface
-	 */
-	public function getUser(): AuthenticatableInterface
-	{
-		return $this->user;
-	}
+    /**
+     * @return AuthenticatableInterface
+     */
+    public function getUser(): AuthenticatableInterface
+    {
+        return $this->user;
+    }
 }

@@ -6,10 +6,11 @@ use dry\orm\Model;
 use dry\orm\special\Boolean;
 use Oak\Dispatcher\Facade\Dispatcher;
 use Tnt\Account\Contracts\AuthenticatableInterface;
+use Tnt\Account\Contracts\RegisterableInterface;
 use Tnt\Account\Events\Activated;
 use Tnt\Account\Events\Created;
 
-class User extends Model implements AuthenticatableInterface
+class User extends Model implements AuthenticatableInterface, RegisterableInterface
 {
     protected static $authIdentifierName = 'email';
     protected static $tokenName = 'temp_token';
@@ -36,7 +37,7 @@ class User extends Model implements AuthenticatableInterface
             $this->created = time();
             $this->updated = time();
 
-            $this->setPassword();
+            $this->setPassword($this->password);
             $this->temp_token = \dry\util\string\random(10);
             parent::save();
 
@@ -46,6 +47,25 @@ class User extends Model implements AuthenticatableInterface
 
         $this->updated = time();
         parent::save();
+    }
+
+    /**
+     * implements RegisterableInterface
+     */
+
+    /**
+     * @param string $identifier
+     * @param string $password
+     * @return null|AuthenticatableInterface
+     */
+    public static function register(string $identifier, string $password): ?AuthenticatableInterface
+    {
+        $user = new User();
+        $user->email = $identifier;
+        $user->password = $password;
+        $user->save();
+
+        return $user;
     }
 
     /**
@@ -89,11 +109,11 @@ class User extends Model implements AuthenticatableInterface
     }
 
     /**
-     *
+     * @param string $password
      */
-    private function setPassword()
+    public function setPassword(string $password)
     {
         $this->password_salt = \dry\util\string\random(10);
-        $this->password = md5($this->password.$this->password_salt);
+        $this->password = md5($password.$this->password_salt);
     }
 }

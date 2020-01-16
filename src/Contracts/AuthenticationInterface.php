@@ -4,25 +4,38 @@ namespace Tnt\Account\Contracts;
 
 Interface AuthenticationInterface
 {
-	/**
-	 * @param string $email
-	 * @param string $password
-	 * @return bool
-	 */
-	public function authenticate(string $email, string $password): bool;
+    /**
+     * @param string $authIdentifier
+     * @param string $password
+     * @return null|AuthenticatableInterface
+     */
+    public function register(string $authIdentifier, string $password): ?AuthenticatableInterface;
 
-	/**
-	 * @return mixed
-	 */
-	public function logout();
+    /**
+     * @param string $authIdentifier
+     * @param string $password
+     * @return bool
+     */
+    public function authenticate(string $authIdentifier, string $password): bool;
 
-	/**
-	 * @return bool
-	 */
-	public function isAuthenticated(): bool;
+    /**
+     * @return mixed
+     */
+    public function logout();
 
-	/**
-	 * @return null|AuthenticatableInterface
-	 */
-	public function getUser(): ?AuthenticatableInterface;
+    /**
+     * @return bool
+     */
+    public function isAuthenticated(): bool;
+
+    /**
+     * @return null|AuthenticatableInterface
+     */
+    public function getUser(): ?AuthenticatableInterface;
+
+    /**
+     * @param string $authIdentifier
+     * @return null|AuthenticatableInterface
+     */
+    public function getActivatedUser(string $authIdentifier): ?AuthenticatableInterface;
 }

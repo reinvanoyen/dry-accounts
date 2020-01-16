@@ -4,91 +4,19 @@ Account system for DRY applications
 #### Installation
 ```ssh
 composer require reinvanoyen/dry-accounts
+
+php oak migration migrate -m accounts
 ```
+
+##### Config options
+Name                | Type                          | Default
+------------------- | ------------------------------|--------------------------
+model               | dry\orm\Model                 | Tnt\Account\Model\User
+storage             | UserStorageInterface          | SessionUserStorage
+factory             | UserFactoryInterface          | UserFactory
+repository          | UserRepositoryInterface       | UserRepository
 
 #### Basic example usage
-
-##### Define authenticate service provider
-```php
-<?php
-
-namespace Auth;
-
-use Repository\UserRepository;
-use Oak\Contracts\Container\ContainerInterface;
-use Oak\ServiceProvider;
-
-class AuthServiceProvider extends ServiceProvider
-{
-	public function boot(ContainerInterface $app)
-	{
-		//
-	}
-
-	public function register(ContainerInterface $app)
-	{
-		$app->set(UserRepositoryInterface::class, UserRepository::class);
-	}
-}
-```
-
-##### User repository definition
-```php
-<?php
-
-namespace app\api\user\Repository;
-
-use app\api\user\Model\User;
-use dry\db\FetchException;
-use Tnt\Account\Contracts\AuthenticatableInterface;
-use Tnt\Account\Contracts\UserRepositoryInterface;
-use Tnt\Dbi\BaseRepository;
-use Tnt\Dbi\Contracts\RepositoryInterface;
-use Tnt\Dbi\Criteria\Equals;
-
-class UserRepository extends BaseRepository implements UserRepositoryInterface, RepositoryInterface
-{
-	protected $model = User::class;
-
-	/**
-	 * @param string $authIdentifier
-	 * @param string $password
-	 * @return User
-	 */
-	public function withCredentials(string $authIdentifier, string $password): ?AuthenticatableInterface
-	{
-		try
-		{
-			$this->addCriteria(new Equals('email', $authIdentifier));
-			$this->addCriteria(new Equals('password', $password));
-
-			return $this->first();
-		}
-		catch ( FetchException $e )
-		{
-			return null;
-		}
-	}
-
-	/**
-	 * @param int $id
-	 * @return null|AuthenticatableInterface
-	 */
-	public function withIdentifier(int $id): ?AuthenticatableInterface
-	{
-		try
-		{
-			$this->addCriteria(new Equals('id', $id));
-
-			return $this->first();
-		}
-		catch ( FetchException $e )
-		{
-			return null;
-		}
-	}
-}
-```
 
 ##### Usage
 ```php
@@ -96,13 +24,79 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface, 
 
 namespace controller;
 
-use Tnt\Account\Facade\Auth;
-
 class authentication
 {
-    public static function logout()
+    public static function login(Request $request)
     {
-        Auth::logout();
+        $login_form = new Form( $request);
+        
+        $login_form->add_email( 'email', [ 'required' => true ] );
+        $login_form->add_password( 'password', [ 'required' => true ] );
+
+        $auth_failed = false;
+        $is_logged_in = \Tnt\Account\Facade\Auth::isAuthenticated();
+
+        if( $login_form->validate() ) {
+
+            if( \Tnt\Account\Facade\Auth::authenticate( $login_form->get( 'email' ), $login_form->get( 'password' ) ) ) {
+                $is_logged_in = true;
+
+            } else {
+                $auth_failed = true;
+            }
+        }
+
+        $tpl = new Template();
+        $tpl->login_form = $login_form;
+        $tpl->auth_failed = $auth_failed;
+        $tpl->is_logged_in = $is_logged_in;
+        $tpl->render('users/login.tpl');
+    }
+    
+    public static function register(Request $request)
+    {
+        $app = Application::get();
+
+        $register_form = new Form( $request);
+
+        $register_failed = false;
+
+        $register_form->add_email('email', [
+            'required' => true,
+            'extra_validation' => function( $value, &$errors ) use ( &$register_failed, $app )
+            {
+                if ($app->get(AuthenticationInterface::class)->getActivatedUser($value)) {
+
+                    $errors[] = 'user_already_activated';
+                    $register_failed = true;
+                }
+            }
+        ]);
+
+        $register_form->add_password( 'password', ['required' => true,] );
+
+        if( $register_form->validate() ) {
+
+            $user = $app->get(AuthenticationInterface::class)
+                ->register(
+                    $register_form->get('email'),
+                    $register_form->get('password')
+                );
+
+            echo 'User registered ' . $user->email;
+        }
+
+        $tpl = new Template();
+        $tpl->register_form = $register_form;
+        $tpl->register_failed = $register_failed;
+        $tpl->render('users/register.tpl');
+    }
+
+    public static function logout(Request $request)
+    {
+        \Tnt\Account\Facade\Auth::logout();
+
+        Response::redirect('login/');
     }
 }
 ```

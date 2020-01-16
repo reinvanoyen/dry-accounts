@@ -39,6 +39,8 @@ class CreateUserTable implements RevisionInterface
             $table->addColumn('password', 'varchar')->length(255);
             $table->addColumn('password_salt', 'varchar')->length(255);
 
+            $table->addUnique('email');
+
         });
 
         $this->queryBuilder->build();

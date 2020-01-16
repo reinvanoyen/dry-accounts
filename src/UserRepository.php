@@ -7,13 +7,25 @@ use Tnt\Account\Contracts\AuthenticatableInterface;
 use Tnt\Account\Contracts\UserRepositoryInterface;
 use Tnt\Account\Model\User;
 use Tnt\Dbi\BaseRepository;
+use Tnt\Dbi\Contracts\CriteriaCollectionInterface;
 use Tnt\Dbi\Contracts\RepositoryInterface;
 use Tnt\Dbi\Criteria\Equals;
+use Tnt\Dbi\Criteria\IsTrue;
 use Tnt\Dbi\Raw;
 
 class UserRepository extends BaseRepository implements UserRepositoryInterface, RepositoryInterface
 {
-    protected $model = User::class;
+    /**
+     * UserRepository constructor.
+     * @param string $model
+     * @param CriteriaCollectionInterface $criteria
+     */
+    public function __construct(string $model, CriteriaCollectionInterface $criteria)
+    {
+        $this->model = $model;
+
+        parent::__construct($criteria);
+    }
 
     /**
      * @param string $authIdentifier
@@ -22,15 +34,29 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface, 
      */
     public function withCredentials(string $authIdentifier, string $password): ?AuthenticatableInterface
     {
-        try
-        {
-            $this->addCriteria(new Equals('email', $authIdentifier));
+        try {
+            $this->addCriteria(new Equals(($this->model)::getAuthIdentifierName(), $authIdentifier));
             $this->addCriteria(new Equals(new Raw('MD5( CONCAT( ?, password_salt ) )', [$password]), new Raw('password')));
 
             return $this->first();
+
+        } catch ( FetchException $e ) {
+            return null;
         }
-        catch ( FetchException $e )
-        {
+    }
+
+    /**
+     * @param string $authIdentifier
+     * @return null|AuthenticatableInterface
+     */
+    public function withAuthIdentifier(string $authIdentifier): ?AuthenticatableInterface
+    {
+        try {
+            $this->addCriteria(new Equals(($this->model)::getAuthIdentifierName(), $authIdentifier));
+
+            return $this->first();
+
+        } catch ( FetchException $e ) {
             return null;
         }
     }
@@ -41,14 +67,29 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface, 
      */
     public function withIdentifier(int $id): ?AuthenticatableInterface
     {
-        try
-        {
+        try {
             $this->addCriteria(new Equals('id', $id));
 
             return $this->first();
+
+        } catch ( FetchException $e ) {
+            return null;
         }
-        catch ( FetchException $e )
-        {
+    }
+
+    /**
+     * @param string $authIdentifier
+     * @return null|AuthenticatableInterface
+     */
+    public function getActivated(string $authIdentifier): ?AuthenticatableInterface
+    {
+        try {
+            $this->addCriteria(new Equals(($this->model)::getAuthIdentifierName(), $authIdentifier));
+            $this->addCriteria(new IsTrue('is_activated'));
+
+            return $this->first();
+
+        } catch ( FetchException $e ) {
             return null;
         }
     }

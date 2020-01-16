@@ -5,6 +5,7 @@ namespace Tnt\Account;
 use Oak\Dispatcher\Facade\Dispatcher;
 use Tnt\Account\Contracts\AuthenticatableInterface;
 use Tnt\Account\Contracts\AuthenticationInterface;
+use Tnt\Account\Contracts\UserFactoryInterface;
 use Tnt\Account\Contracts\UserRepositoryInterface;
 use Tnt\Account\Contracts\UserStorageInterface;
 use Tnt\Account\Events\Authenticated;
@@ -16,81 +17,112 @@ use Tnt\Account\Events\Logout;
  */
 class Authentication implements AuthenticationInterface
 {
-	/**
-	 * @var UserStorageInterface $userStorage
-	 */
-	private $userStorage;
+    /**
+     * @var UserStorageInterface $userStorage
+     */
+    private $userStorage;
 
-	/**
-	 * @var UserRepositoryInterface
-	 */
-	private $userRepository;
+    /**
+     * @var UserRepositoryInterface
+     */
+    private $userRepository;
 
-	/**
-	 * Authentication constructor.
-	 * @param UserStorageInterface $userStorage
-	 * @param UserRepositoryInterface $userRepository
-	 */
-	public function __construct(UserStorageInterface $userStorage, UserRepositoryInterface $userRepository)
-	{
-		$this->userStorage = $userStorage;
-		$this->userRepository = $userRepository;
-	}
+    /**
+     * @var UserFactoryInterface
+     */
+    private $userFactory;
 
-	/**
-	 * @param string $authIdentifier
-	 * @param string $password
-	 * @return bool
-	 */
-	public function authenticate(string $authIdentifier, string $password): bool
-	{
-		if (! $this->userStorage->isValid()) {
+    /**
+     * Authentication constructor.
+     * @param UserStorageInterface $userStorage
+     * @param UserRepositoryInterface $userRepository
+     * @param UserFactoryInterface $userFactory
+     */
+    public function __construct(UserStorageInterface $userStorage, UserRepositoryInterface $userRepository, UserFactoryInterface $userFactory = null)
+    {
+        $this->userStorage = $userStorage;
+        $this->userRepository = $userRepository;
+        $this->userFactory = $userFactory;
+    }
 
-			$user = $this->userRepository->withCredentials($authIdentifier, $password);
+    /**
+     * @param string $authIdentifier
+     * @param string $password
+     * @return null|AuthenticatableInterface
+     */
+    public function register(string $authIdentifier, string $password): ?AuthenticatableInterface
+    {
+        if ($this->userFactory) {
 
-			if ($user) {
+            return $this->userFactory->register($authIdentifier, $password);
+        }
 
-				// Dispatch the Authenticated event
-				Dispatcher::dispatch(Authenticated::class, new Authenticated($user));
+        return null;
+    }
 
-				// Store the user
-				$this->userStorage->store($user);
+    /**
+     * @param string $authIdentifier
+     * @param string $password
+     * @return bool
+     */
+    public function authenticate(string $authIdentifier, string $password): bool
+    {
+        if (! $this->userStorage->isValid()) {
 
-				return true;
-			}
-		}
+            $user = $this->userRepository->withCredentials($authIdentifier, $password);
 
-		return false;
-	}
+            if ($user) {
 
-	/**
-	 *
-	 */
-	public function logout()
-	{
-		if ($this->isAuthenticated()) {
+                // Dispatch the Authenticated event
+                Dispatcher::dispatch(Authenticated::class, new Authenticated($user));
 
-			$user = $this->userStorage->retrieve();
-			$this->userStorage->clear();
+                // Store the user
+                $this->userStorage->store($user);
 
-			// Dispatch the Logout event
-			Dispatcher::dispatch(Logout::class, new Logout($user));
-		}
-	}
+                return true;
+            }
+        }
 
-	/**
-	 * @return bool
-	 */
-	public function isAuthenticated(): bool
-	{
-		return (bool) $this->userStorage->isValid();
-	}
+        return false;
+    }
 
-	/**
-	 * @return null|AuthenticatableInterface
-	 */
-	public function getUser(): ?AuthenticatableInterface
-	{
-		return $this->userStorage->retrieve();
-	}
+    /**
+     *
+     */
+    public function logout()
+    {
+        if ($this->isAuthenticated()) {
+
+            $user = $this->userStorage->retrieve();
+            $this->userStorage->clear();
+
+            // Dispatch the Logout event
+            Dispatcher::dispatch(Logout::class, new Logout($user));
+        }
+    }
+
+    /**
+     * @return bool
+     */
+    public function isAuthenticated(): bool
+    {
+        return (bool) $this->userStorage->isValid();
+    }
+
+    /**
+     * @return null|AuthenticatableInterface
+     */
+    public function getUser(): ?AuthenticatableInterface
+    {
+        return $this->userStorage->retrieve();
+    }
+
+    /**
+     * @param string $authIdentifier
+     * @return null|AuthenticatableInterface
+     */
+    public function getActivatedUser(string $authIdentifier): ?AuthenticatableInterface
+    {
+        return $this->userRepository->getActivated($authIdentifier);
+    }
 }

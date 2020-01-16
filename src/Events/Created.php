@@ -8,5 +8,5 @@ namespace Tnt\Account\Events;
  */
 class Created extends UserEvent
 {
-	//
+    //
 }
