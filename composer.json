@@ -6,7 +6,7 @@
     "reinvanoyen/oak": "^1.0.6",
     "dietervyncke/dry-dbi": "^1.0.2",
     "dietervyncke/dry-external-api": "^1.0.0",
-    "lindelius/php-jwt": "dev-master"
+    "lindelius/php-jwt": "^0.8.1"
   },
   "autoload": {
     "psr-4": {
