@@ -45,11 +45,13 @@ class AccountServiceProvider extends ServiceProvider
 
         $app->set(UserStorageInterface::class, $config->get('accounts.storage', SessionUserStorage::class));
 
-        $app->set(UserFactoryInterface::class, $config->get('accounts.factory', UserFactory::class));
-        $app->whenAsksGive(UserFactory::class, 'model', $model);
+        $factory = $config->get('accounts.factory', UserFactory::class);
+        $app->set(UserFactoryInterface::class, $factory);
+        $app->whenAsksGive($factory, 'model', $model);
 
-        $app->set(UserRepositoryInterface::class, $config->get('accounts.repository', UserRepository::class));
-        $app->whenAsksGive(UserRepository::class, 'model', $model);
+        $repository = $config->get('accounts.repository', UserRepository::class);
+        $app->set(UserRepositoryInterface::class, $repository);
+        $app->whenAsksGive($repository, 'model', $model);
 
         $app->set(AuthenticationInterface::class, Authentication::class);
     }

@@ -3,10 +3,10 @@
 namespace Tnt\Account\Controller;
 
 use Oak\Contracts\Config\RepositoryInterface;
+use Tnt\Account\Contracts\AuthenticationInterface;
 use Tnt\Account\Contracts\UserRepositoryInterface;
 use Tnt\ExternalApi\Exception\ApiException;
 use Tnt\ExternalApi\Http\Request;
-use Tnt\Account\Facade\Auth as Authentication;
 
 class AuthController
 {
@@ -14,6 +14,11 @@ class AuthController
      * @var UserRepositoryInterface
      */
     private $userRepository;
+
+    /**
+     * @var AuthenticationInterface
+     */
+    private $authentication;
 
     /**
      * @var RepositoryInterface
@@ -28,11 +33,13 @@ class AuthController
     /**
      * AuthController constructor.
      * @param UserRepositoryInterface $userRepository
+     * @param AuthenticationInterface $authentication
      * @param RepositoryInterface $config
      */
-    public function __construct(UserRepositoryInterface $userRepository, RepositoryInterface $config)
+    public function __construct(UserRepositoryInterface $userRepository, AuthenticationInterface $authentication, RepositoryInterface $config)
     {
         $this->userRepository = $userRepository;
+        $this->authentication = $authentication;
         $this->config = $config;
 
         $this->secret = $config->get('accounts.jwt_secret', '');
@@ -49,11 +56,11 @@ class AuthController
             throw new ApiException('auth_failed');
         }
 
-        if (! Authentication::authenticate($request->getHeader('USER'), $request->getHeader('PASSWORD'))) {
+        if (! $this->authentication->authenticate($request->getHeader('USER'), $request->getHeader('PASSWORD'))) {
             throw new ApiException('auth_failed');
         }
 
-        $user = Authentication::getUser();
+        $user = $this->authentication->getUser();
 
         try {
 
