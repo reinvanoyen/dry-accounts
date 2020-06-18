@@ -24,6 +24,12 @@ interface UserRepositoryInterface
     public function withIdentifier(int $id): ?AuthenticatableInterface;
 
     /**
+     * @param string $refreshToken
+     * @return null|AuthenticatableInterface
+     */
+    public function withValidRefreshToken(string $refreshToken): ?AuthenticatableInterface;
+
+    /**
      * @param string $authIdentifier
      * @return null|AuthenticatableInterface
      */

@@ -13,6 +13,7 @@ use Tnt\Account\Contracts\UserRepositoryInterface;
 use Tnt\Account\Contracts\UserStorageInterface;
 use Tnt\Account\Controller\AuthController;
 use Tnt\Account\Model\User;
+use Tnt\Account\Revisions\AlterUserTableAddRefreshToken;
 use Tnt\Account\Revisions\CreateUserTable;
 use Tnt\ExternalApi\Facade\Api;
 
@@ -22,6 +23,7 @@ class AccountServiceProvider extends ServiceProvider
     {
         Api::get('1', 'authenticate', AuthController::class, 'authenticate');
         Api::get('1', 'authorize', AuthController::class, 'authorize');
+        Api::post('1', 'refresh-token', AuthController::class, 'refreshToken');
 
         if ($app->isRunningInConsole()) {
 
@@ -30,7 +32,8 @@ class AccountServiceProvider extends ServiceProvider
             ]);
 
             $migrator->setRevisions([
-                CreateUserTable::class
+                CreateUserTable::class,
+                AlterUserTableAddRefreshToken::class,
             ]);
 
             $app->get(MigrationManager::class)->addMigrator($migrator);

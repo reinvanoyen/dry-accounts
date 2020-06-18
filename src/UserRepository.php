@@ -5,11 +5,13 @@ namespace Tnt\Account;
 use dry\db\FetchException;
 use Tnt\Account\Contracts\AuthenticatableInterface;
 use Tnt\Account\Contracts\UserRepositoryInterface;
+use Tnt\Account\Facade\Auth;
 use Tnt\Account\Model\User;
 use Tnt\Dbi\BaseRepository;
 use Tnt\Dbi\Contracts\CriteriaCollectionInterface;
 use Tnt\Dbi\Contracts\RepositoryInterface;
 use Tnt\Dbi\Criteria\Equals;
+use Tnt\Dbi\Criteria\GreaterThan;
 use Tnt\Dbi\Criteria\IsTrue;
 use Tnt\Dbi\Raw;
 
@@ -69,6 +71,23 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface, 
     {
         try {
             $this->addCriteria(new Equals('id', $id));
+
+            return $this->first();
+
+        } catch ( FetchException $e ) {
+            return null;
+        }
+    }
+
+    /**
+     * @param string $refreshToken
+     * @return null|AuthenticatableInterface
+     */
+    public function withValidRefreshToken(string $refreshToken): ?AuthenticatableInterface
+    {
+        try {
+            $this->addCriteria(new Equals('refresh_token', $refreshToken));
+            $this->addCriteria(new GreaterThan('refresh_token_expiry_time', time()));
 
             return $this->first();
 
