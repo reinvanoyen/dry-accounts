@@ -121,12 +121,12 @@ class AuthController
         try {
 
             $jwt = new \Lindelius\JWT\StandardJWT();
-            $jwt->exp = $this->config->get('accounts.token_expiry_time', time() + (60 * 60));
+            $jwt->exp = time() + $this->config->get('accounts.token_expiry_time', (60*60));
             $jwt->iat = time();
             $jwt->sub = $user->getIdentifier();
 
             $user->refresh_token = random(16);
-            $user->refresh_token_expiry_time = $this->config->get('accounts.refresh_token_expiry_time', time() + (60*60*2));
+            $user->refresh_token_expiry_time = time() + $this->config->get('accounts.refresh_token_expiry_time', (60*60*2));
             $user->save();
 
             return [
